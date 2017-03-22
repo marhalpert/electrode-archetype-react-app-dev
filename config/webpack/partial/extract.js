@@ -47,78 +47,69 @@ module.exports = function () {
   return function (config) {
     var cssModuleStylusSupport = archetype.webpack.cssModuleStylusSupport;
     var stylusQuery = cssLoader + "?-autoprefixer!" + stylusLoader;
-    var cssQuery = cssLoader + "?modules&-autoprefixer&localIdentName=[name]__[local]!" + postcssLoader;
+    var cssQuery = cssLoader + "?modules&-autoprefixer&localIdentName=[name]__[local]___[hash:base64:5]!" + postcssLoader;
     var cssStylusQuery = cssLoader + "?modules&-autoprefixer!" + postcssLoader + "!" + stylusLoader;
 
     // By default, this archetype assumes you are using CSS-Modules + CSS-Next
     var rules = [
       {
-        test: /\.css$/,
-        exclude: /\.module\.css$/,
-        loader: ExtractTextPlugin.extract({fallback: styleLoader, use: cssLoader, publicPath: ""})
-      },
-      {
-        test: /\.module\.css$/,
-        loader: ExtractTextPlugin.extract({fallback: styleLoader, use: cssQuery, publicPath: ""})
-      },
-      {
         test: /\.scss$/,
         exclude: /\.module\.scss$/,
-        loader: ExtractTextPlugin.extract({
-          fallback: {
-            loader: 'style-loader',
-            options: {
-              sourceMap: true
-            }
-          },
-          use: [{
+        loaders: [{
+          loader: 'style-loader',
+          options: {
+            sourceMap: true
+          }
+        }, {
             loader: 'css-loader',
             options: {
-              localIdentName: "[name]__[local]",
+              parser:'postcss-scss',
+              importLoaders: 1,
               sourceMap: true
             }
-          }, {
-            loader: 'postcss-loader',
-            options: {
-              sourceMap: true
-            }
-          }, {
-            loader: 'sass-loader',
-            options: {
-              sourceMap: true,
-              includePaths: [config.context]
-            }
-          }]
-        })
+        }, {
+          loader: 'postcss-loader',
+          options: {
+            sourceMap: true
+          }
+        }, {
+          loader: 'resolve-url-loader',
+        }, {
+          loader: 'sass-loader',
+          options: {
+            sourceMap: true
+          }
+        }]
       }, {
-				test: /\.module\.scss$/,
-        loader: ExtractTextPlugin.extract({
-          fallback: {
-            loader: 'style-loader',
-            options: {
-              sourceMap: true
-            }
-          },
-          use: [{
-            loader: 'css-loader',
-            options: {
-              modules: true,
-              localIdentName: "[name]__[local]",
-              sourceMap: true
-            }
-          }, {
-            loader: 'postcss-loader',
-            options: {
-              sourceMap: true
-            }
-          }, {
-            loader: 'sass-loader',
-            options: {
-              sourceMap: true,
-              includePaths: [config.context]
-            }
-          }]
-        })
+        test: /\.module\.scss$/,
+        loaders:[{
+          loader: 'style-loader',
+          options: {
+            sourceMap: true
+          }
+        }, {
+          loader: 'css-loader',
+          options: {
+            parser:'postcss-scss',
+            modules: true,
+            importLoaders: 1,
+            localIdentName: "[name]-[local]-[hash:base64:5]",
+            sourceMap: true
+          }
+        }, {
+          loader: 'postcss-loader',
+          options: {
+            sourceMap: true
+          }
+        }, {
+          loader: 'resolve-url-loader',
+        }, {
+          loader: 'sass-loader',
+          options: {
+            sourceMap: true
+          }
+        }
+        ]
       }
     ];
 
@@ -147,6 +138,7 @@ module.exports = function () {
         new CSSSplitPlugin({size: 4000, imports: true, preserve: true}),
         new webpack.LoaderOptionsPlugin({
           options: {
+            context: Path.resolve(process.cwd(), "client"),
             postcss: function () {
               return cssModuleSupport ? [atImport, cssnext({
                 browsers: ["last 2 versions", "ie >= 9", "> 5%"]
